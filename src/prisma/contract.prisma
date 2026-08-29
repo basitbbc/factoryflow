@@ -1,0 +1,75 @@
+// use prisma-next
+
+enum Role {
+  ADMIN
+  PRODUCTION_MANAGER
+  OPERATOR
+  QUALITY_INSPECTOR
+}
+
+enum ProductionOrderStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  role      Role     @default(OPERATOR)
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  productionOrders ProductionOrder[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  sku         String   @unique
+  name        String
+  description String?
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  bomItems         BomItem[]
+  productionOrders ProductionOrder[]
+}
+
+model RawMaterial {
+  id          Int      @id @default(autoincrement())
+  sku         String   @unique
+  name        String
+  unit        String
+  stockQty    Int      @default(0)
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  bomItems BomItem[]
+}
+
+model BomItem {
+  id            Int @id @default(autoincrement())
+  productId     Int
+  rawMaterialId Int
+  quantity      Int
+
+  product     Product     @relation(fields: [productId], references: [id])
+  rawMaterial RawMaterial @relation(fields: [rawMaterialId], references: [id])
+
+  @@unique([productId, rawMaterialId])
+}
+
+model ProductionOrder {
+  id          Int                   @id @default(autoincrement())
+  productId   Int
+  quantity    Int
+  status      ProductionOrderStatus @default(PLANNED)
+  createdById Int
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  product   Product @relation(fields: [productId], references: [id])
+  createdBy User    @relation(fields: [createdById], references: [id])
+}
